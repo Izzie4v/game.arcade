@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Malam Bermain — Arkade Mini</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#141F1A; --bg2:#1B2A23; --panel:#20302A; --text:#EDE6D2; --muted:#9CB3A6;
+    --accent:#C9A34E; --accent2:#B4432D; --line:#3E7C74;
+    --shadow: 0 12px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-snap-type:y mandatory; scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:.001s !important; transition-duration:.001s !important;}
+  }
+  body{
+    margin:0; min-height:100vh; background:var(--bg); color:var(--text);
+    font-family:'Inter',sans-serif;
+    background-image:
+      radial-gradient(ellipse at 20% -10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
+      radial-gradient(ellipse at 100% 110%, color-mix(in srgb, var(--line) 12%, transparent), transparent 55%);
+    transition: background-color .35s ease, color .35s ease;
+  }
+  h1,h2,h3{font-family:'Fraunces',serif; margin:0;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  button{font-family:inherit; cursor:pointer;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:6px;}
+  a{color:inherit;}
+
+  .fleuron{width:46px; height:16px; margin:0 auto 14px; display:block; opacity:.85;}
+  .fleuron path{fill:none; stroke:var(--accent); stroke-width:2; stroke-linecap:round;}
+  .fleuron circle{fill:var(--accent);}
+
+  /* ---------- nav dots ---------- */
+  .dotnav{
+    position:fixed; right:18px; top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:12px; z-index:40;
+  }
+  .dotnav a{
+    width:10px; height:10px; border-radius:50%;
+    background:color-mix(in srgb, var(--text) 25%, transparent);
+    border:1px solid color-mix(in srgb, var(--text) 35%, transparent);
+    display:block; position:relative; transition:background .25s, transform .25s;
+  }
+  .dotnav a.active{ background:var(--accent); transform:scale(1.3); border-color:var(--accent);}
+  .dotnav a span{
+    position:absolute; right:20px; top:50%; transform:translateY(-50%);
+    white-space:nowrap; font-size:.7rem; letter-spacing:.03em;
+    background:var(--panel); padding:4px 9px; border-radius:8px;
+    opacity:0; pointer-events:none; transition:opacity .2s; box-shadow:var(--shadow);
+  }
+  .dotnav a:hover span, .dotnav a:focus-visible span{opacity:1;}
+
+  /* ---------- settings button + drawer ---------- */
+  .settings-btn{
+    position:fixed; top:18px; right:18px; z-index:50;
+    width:46px; height:46px; border-radius:50%; border:1px solid color-mix(in srgb, var(--text) 25%, transparent);
+    background:var(--panel); color:var(--text); font-size:1.2rem; box-shadow:var(--shadow);
+    display:flex; align-items:center; justify-content:center; transition:transform .3s;
+  }
+  .settings-btn:hover{transform:rotate(35deg);}
+  .backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:59;
+    opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .backdrop.open{opacity:1; pointer-events:auto;}
+  .drawer{
+    position:fixed; top:0; right:0; height:100%; width:min(360px,88vw);
+    background:var(--panel); z-index:60; box-shadow:-8px 0 30px rgba(0,0,0,.4);
+    transform:translateX(105%); transition:transform .35s cubic-bezier(.2,.8,.2,1);
+    padding:26px 22px; overflow-y:auto;
+  }
+  .drawer.open{transform:translateX(0);}
+  .drawer h2{font-size:1.3rem; margin-bottom:4px;}
+  .drawer .sub{color:var(--muted); font-size:.85rem; margin-bottom:22px;}
+  .drawer-close{
+    position:absolute; top:20px; right:20px; background:none; border:none; color:var(--text);
+    font-size:1.4rem; line-height:1;
+  }
+  .field{margin-bottom:24px;}
+  .field label.title{display:block; font-weight:600; margin-bottom:10px; font-size:.9rem;}
+  .field .field-sub{color:var(--muted); font-size:.76rem; margin-top:6px;}
+
+  .seg{display:flex; background:var(--bg2); border-radius:12px; padding:4px; gap:4px;}
+  .seg button{
+    flex:1; border:none; background:transparent; color:var(--muted); padding:9px 6px;
+    border-radius:9px; font-size:.85rem; font-weight:500; transition:background .2s,color .2s;
+  }
+  .seg button.active{background:var(--accent); color:var(--bg); font-weight:600;}
+
+  .swatches{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .swatch{
+    border:2px solid transparent; border-radius:12px; padding:10px; text-align:left;
+    background:var(--bg2); color:var(--text); display:flex; align-items:center; gap:9px;
+    font-size:.8rem;
+  }
+  .swatch.active{border-color:var(--accent);}
+  .swatch .dots{display:flex; gap:3px;}
+  .swatch .dots i{width:9px; height:9px; border-radius:50%; display:block;}
+
+  .toggle-row{display:flex; align-items:center; justify-content:space-between;}
+  .switch{position:relative; width:52px; height:28px; flex-shrink:0;}
+  .switch input{opacity:0; width:0; height:0;}
+  .slider{position:absolute; inset:0; background:var(--bg2); border-radius:20px; transition:.3s; cursor:pointer;}
+  .slider::before{content:"";position:absolute; width:22px; height:22px; left:3px; top:3px; background:var(--text); border-radius:50%; transition:.3s;}
+  input:checked + .slider{background:var(--accent);}
+  input:checked + .slider::before{transform:translateX(24px); background:var(--bg);}
+
+  .drawer hr{border:none; border-top:1px solid color-mix(in srgb, var(--text) 15%, transparent); margin:22px 0;}
+  .btn-block{width:100%; display:block; text-align:center;}
+
+  /* ---------- stage sections ---------- */
+  main{scroll-snap-type:y mandatory;}
+  .stage{
+    min-height:100svh; width:100%; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; scroll-snap-align:start; position:relative;
+    padding:80px 20px 50px;
+  }
+  .eyebrow{
+    text-transform:uppercase; letter-spacing:.18em; font-size:.72rem; color:var(--accent);
+    font-weight:600; margin-bottom:4px; text-align:center;
+  }
+  .stage h1{font-size:clamp(2rem,5vw,3rem); margin-bottom:6px; text-align:center;}
+  .stage .desc{color:var(--muted); max-width:460px; text-align:center; margin-bottom:26px; font-size:.95rem;}
+
+  .status-line{
+    display:flex; gap:10px; align-items:center; margin-bottom:20px; font-size:.95rem;
+    background:var(--panel); padding:9px 18px; border-radius:30px; box-shadow:var(--shadow);
+  }
+  .status-line .pip{width:9px; height:9px; border-radius:50%; background:var(--accent);}
+
+  .row-controls{display:flex; gap:12px; margin-top:26px; flex-wrap:wrap; justify-content:center;}
+  .btn{
+    padding:11px 20px; border-radius:12px; border:1px solid color-mix(in srgb, var(--text) 20%, transparent);
+    background:var(--panel); color:var(--text); font-size:.88rem; font-weight:500; transition:transform .15s, background .2s;
+  }
+  .btn:hover{transform:translateY(-2px);}
+  .btn.primary{background:var(--accent); color:var(--bg); border-color:transparent; font-weight:600;}
+  .btn:disabled{opacity:.5; cursor:not-allowed; transform:none;}
+  .score-row{display:flex; gap:22px; margin-top:22px; font-family:'IBM Plex Mono',monospace; font-size:.85rem; color:var(--muted);}
+  .score-row b{color:var(--text); font-size:1.05rem; display:block; text-align:center;}
+
+  /* ---------- HOME HUB ---------- */
+  #home{padding-top:60px;}
+  .hub-title{font-size:clamp(2.4rem,7vw,4rem); text-align:center; margin-bottom:8px;}
+  .hub-sub{color:var(--muted); text-align:center; max-width:480px; margin-bottom:44px;}
+  .hub-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:18px; max-width:900px; width:100%;
+  }
+  .hub-card{
+    background:var(--panel); border-radius:16px; padding:24px 20px; text-align:left;
+    border:1px solid color-mix(in srgb, var(--text) 10%, transparent);
+    display:flex; flex-direction:column; gap:10px; transition:transform .25s, box-shadow .25s;
+    text-decoration:none; box-shadow:0 4px 14px rgba(0,0,0,.18);
+  }
+  .hub-card:hover{transform:translateY(-5px); box-shadow:var(--shadow);}
+  .hub-card svg{width:34px; height:34px;}
+  .hub-card svg *{stroke:var(--accent); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+  .hub-card h3{font-size:1.15rem;}
+  .hub-card p{color:var(--muted); font-size:.82rem; margin:0; line-height:1.4;}
+  .hub-card .tag{
+    align-self:flex-start; font-size:.68rem; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--line); font-weight:600; margin-top:auto;
+  }
+
+  /* ---------- tic tac toe ---------- */
+  .board-wrap{position:relative; width:min(300px,76vw); aspect-ratio:1;}
+  .board-wrap svg.grid{position:absolute; inset:0; width:100%; height:100%;}
+  .grid path{fill:none; stroke:var(--muted); stroke-width:4; stroke-linecap:round; opacity:.55;}
+  .cells{position:absolute; inset:0; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);}
+  .cell{background:none; border:none; position:relative;}
+  .cell svg{width:60%; height:60%; overflow:visible;}
+  .cell .mark{fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-width:9;
+    stroke-dasharray:340; stroke-dashoffset:340; transition:stroke-dashoffset .45s ease;}
+  .cell .mark.show{stroke-dashoffset:0;}
+  .cell .mark.x{stroke:var(--accent2);}
+  .cell .mark.o{stroke:var(--line);}
+  .cell.win{background:color-mix(in srgb, var(--accent) 18%, transparent); border-radius:8px;}
+
+  /* ---------- number guess ---------- */
+  .gauge-wrap{width:min(280px,78vw);}
+  .gauge-wrap svg{width:100%; overflow:visible;}
+  .gauge-arc{fill:none; stroke:var(--bg2); stroke-width:14; stroke-linecap:round;}
+  .gauge-fill{fill:none; stroke:url(#gaugeGrad); stroke-width:14; stroke-linecap:round;}
+  .needle{stroke:var(--text); stroke-width:4; stroke-linecap:round; transition:transform .5s cubic-bezier(.3,1.4,.4,1);}
+  .needle-hub{fill:var(--text);}
+  .gauge-readout{text-align:center; margin-top:-10px;}
+  .gauge-readout .feedback{font-size:1.1rem; font-weight:600; font-family:'Fraunces',serif;}
+  .gauge-readout .range{color:var(--muted); font-size:.82rem; margin-top:2px;}
+  .guess-form{display:flex; gap:10px; margin-top:20px; align-items:center;}
+  .guess-form input{
+    width:130px; padding:12px 14px; font-size:1.1rem; text-align:center;
+    border-radius:12px; border:1px solid color-mix(in srgb, var(--text) 25%, transparent);
+    background:var(--panel); color:var(--text); font-family:'IBM Plex Mono',monospace;
+  }
+  .chips{display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; justify-content:center; max-width:360px;}
+  .chip{
+    padding:5px 11px; border-radius:20px; background:var(--panel); font-family:'IBM Plex Mono',monospace;
+    font-size:.8rem; display:flex; align-items:center; gap:5px; box-shadow:var(--shadow);
+  }
+  .chip.up::after{content:"↑"; color:var(--accent2);}
+  .chip.down::after{content:"↓"; color:var(--line);}
+  .attempts-left{margin-top:14px; font-size:.85rem; color:var(--muted);}
+  .attempts-left b{color:var(--text);}
+
+  /* ---------- memory match ---------- */
+  .memo-grid{display:grid; gap:10px; width:min(420px,86vw);}
+  .memo-card{
+    aspect-ratio:1; border-radius:12px; border:none; position:relative; perspective:600px;
+    background:none;
+  }
+  .memo-inner{
+    position:absolute; inset:0; transform-style:preserve-3d; transition:transform .4s;
+    border-radius:12px;
+  }
+  .memo-card.flipped .memo-inner, .memo-card.matched .memo-inner{ transform:rotateY(180deg); }
+  .memo-face{
+    position:absolute; inset:0; backface-visibility:hidden; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .memo-face.back{ background:var(--panel); border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+  .memo-face.back::after{ content:"?"; color:var(--muted); font-family:'Fraunces',serif; font-size:1.4rem; }
+  .memo-face.front{ background:var(--bg2); transform:rotateY(180deg); }
+  .memo-face.front svg{ width:52%; height:52%; }
+  .memo-card.matched .memo-face.front{ background:color-mix(in srgb, var(--accent) 22%, var(--bg2)); }
+  .memo-stats{display:flex; gap:26px; margin-top:22px; font-family:'IBM Plex Mono',monospace; font-size:.85rem; color:var(--muted);}
+  .memo-stats b{color:var(--text); font-size:1.05rem; display:block; text-align:center;}
+
+  /* ---------- rock paper scissors ---------- */
+  .rps-arena{display:flex; align-items:center; justify-content:center; gap:30px; margin-bottom:20px;}
+  .rps-slot{
+    width:88px; height:88px; border-radius:50%; background:var(--panel); display:flex;
+    align-items:center; justify-content:center; box-shadow:var(--shadow); position:relative;
+  }
+  .rps-slot svg{width:46px; height:46px;}
+  .rps-slot svg *{stroke:var(--text); fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;}
+  .rps-vs{font-family:'Fraunces',serif; color:var(--muted); font-size:1rem;}
+  .rps-choices{display:flex; gap:14px;}
+  .rps-choice{
+    width:64px; height:64px; border-radius:50%; background:var(--panel); border:2px solid transparent;
+    display:flex; align-items:center; justify-content:center; transition:transform .15s, border-color .2s;
+  }
+  .rps-choice:hover{transform:translateY(-3px); border-color:var(--accent);}
+  .rps-choice svg{width:32px; height:32px;}
+  .rps-choice svg *{stroke:var(--text); fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;}
+  .rps-result{font-family:'Fraunces',serif; font-size:1.15rem; min-height:1.6em; margin-top:4px;}
+
+  /* ---------- simon pattern ---------- */
+  .simon-pad-wrap{width:min(260px,72vw); aspect-ratio:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:10px;}
+  .simon-pad{
+    border:none; border-radius:16px; opacity:.55; transition:opacity .12s, transform .12s;
+  }
+  .simon-pad.lit{opacity:1; transform:scale(.96);}
+  .simon-pad:nth-child(1){background:var(--accent); border-radius:16px 6px 6px 6px;}
+  .simon-pad:nth-child(2){background:var(--accent2); border-radius:6px 16px 6px 6px;}
+  .simon-pad:nth-child(3){background:var(--line); border-radius:6px 6px 6px 16px;}
+  .simon-pad:nth-child(4){background:color-mix(in srgb, var(--text) 55%, var(--bg2)); border-radius:6px 6px 16px 6px;}
+  .simon-status{margin-top:18px; font-size:.9rem; color:var(--muted); text-align:center;}
+  .simon-status b{color:var(--text);}
+
+  @media (max-width:520px){
+    .dotnav{right:8px;}
+    .dotnav a span{display:none;}
+    .settings-btn{top:12px; right:12px; width:40px; height:40px;}
+    .rps-arena{gap:16px;}
+  }
+</style>
+</head>
+<body data-theme="parlor" data-mode="dark">
+
+  <nav class="dotnav" aria-label="Navigasi bagian">
+    <a href="#home" class="active"><span>Beranda</span></a>
+    <a href="#ttt"><span>Tic-Tac-Toe</span></a>
+    <a href="#guess"><span>Tebak Angka</span></a>
+    <a href="#memo"><span>Memori</span></a>
+    <a href="#rps"><span>Batu Gunting Kertas</span></a>
+    <a href="#simon"><span>Pola Kuningan</span></a>
+  </nav>
+
+  <button class="settings-btn" id="settingsBtn" aria-label="Buka pengaturan" aria-haspopup="true">⚙</button>
+  <div class="backdrop" id="backdrop"></div>
+
+  <aside class="drawer" id="drawer" role="dialog" aria-label="Pengaturan" aria-hidden="true">
+    <button class="drawer-close" id="drawerClose" aria-label="Tutup pengaturan">✕</button>
+    <h2>Pengaturan</h2>
+    <p class="sub">Sesuaikan tampilan dan tantangan untuk semua permainan.</p>
+
+    <div class="field">
+      <label class="title">Tingkat kesulitan</label>
+      <div class="seg" id="difficultySeg" role="group" aria-label="Tingkat kesulitan">
+        <button data-val="easy">Mudah</button>
+        <button data-val="medium" class="active">Sedang</button>
+        <button data-val="hard">Sulit</button>
+      </div>
+      <p class="field-sub">Mengatur kecerdasan lawan, ukuran papan, dan jumlah percobaan di semua game.</p>
+    </div>
+
+    <div class="field">
+      <div class="toggle-row">
+        <label class="title" for="modeToggle" style="margin:0;">Pencahayaan gelap</label>
+        <label class="switch">
+          <input type="checkbox" id="modeToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="toggle-row">
+        <label class="title" for="soundToggle" style="margin:0;">Efek suara</label>
+        <label class="switch">
+          <input type="checkbox" id="soundToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="title">Tema</label>
+      <div class="swatches" id="themeSwatches">
+        <button class="swatch active" data-theme="parlor">
+          <span class="dots"><i style="background:#C9A34E"></i><i style="background:#3E7C74"></i><i style="background:#B4432D"></i></span>
+          Malam Bermain
+        </button>
+        <button class="swatch" data-theme="neon">
+          <span class="dots"><i style="background:#FF3EC9"></i><i style="background:#33E1FF"></i><i style="background:#0A0A12"></i></span>
+          Neon Arkade
+        </button>
+        <button class="swatch" data-theme="ocean">
+          <span class="dots"><i style="background:#3FC7B0"></i><i style="background:#F2795A"></i><i style="background:#08141F"></i></span>
+          Laut Dalam
+        </button>
+        <button class="swatch" data-theme="sakura">
+          <span class="dots"><i style="background:#F28FB2"></i><i style="background:#B58CE0"></i><i style="background:#1E1620"></i></span>
+          Sakura
+        </button>
+      </div>
+    </div>
+
+    <hr>
+    <button class="btn btn-block" id="resetAllScores">Reset Semua Skor</button>
+  </aside>
+
+  <main>
+    <!-- ============ HOME HUB ============ -->
+    <section class="stage" id="home">
+      <svg class="fleuron" viewBox="0 0 46 16"><path d="M2,8 C14,2 18,14 23,8 C28,2 32,14 44,8"/><circle cx="23" cy="8" r="2.4"/></svg>
+      <h1 class="hub-title">Malam Bermain</h1>
+      <p class="hub-sub">Lima permainan singkat dalam satu meja. Gulir ke bawah atau pilih salah satu untuk mulai.</p>
+      <div class="hub-grid">
+        <a class="hub-card" href="#ttt">
+          <svg viewBox="0 0 24 24"><path d="M8 3v18M16 3v18M3 8h18M3 16h18"/></svg>
+          <h3>Tic-Tac-Toe</h3>
+          <p>Papan kapur klasik. Lawan komputer atau bermain berdua.</p>
+          <span class="tag">01 — Strategi</span>
+        </a>
+        <a class="hub-card" href="#guess">
+          <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 3v9l6 3"/></svg>
+          <h3>Tebak Angka</h3>
+          <p>Ikuti jarum penunjuk untuk mempersempit tebakanmu.</p>
+          <span class="tag">02 — Logika</span>
+        </a>
+        <a class="hub-card" href="#memo">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+          <h3>Memori</h3>
+          <p>Balik kartu dan temukan seluruh pasangannya.</p>
+          <span class="tag">03 — Ingatan</span>
+        </a>
+        <a class="hub-card" href="#rps">
+          <svg viewBox="0 0 24 24"><path d="M7 11V5a2 2 0 1 1 4 0v5"/><path d="M11 10V4a2 2 0 1 1 4 0v6"/><path d="M15 10V6a2 2 0 1 1 4 0v7c0 4-2.5 7-6.5 7-3 0-4.5-1.2-6-3l-2.7-4a1.7 1.7 0 0 1 2.6-2.1L8 12"/></svg>
+          <h3>Batu Gunting Kertas</h3>
+          <p>Adu cepat lawan komputer yang membaca kebiasaanmu.</p>
+          <span class="tag">04 — Refleks</span>
+        </a>
+        <a class="hub-card" href="#simon">
+          <svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="4"/><circle cx="16" cy="8" r="4"/><circle cx="8" cy="16" r="4"/><circle cx="16" cy="16" r="4"/></svg>
+          <h3>Pola Kuningan</h3>
+          <p>Ingat dan ulangi urutan cahaya yang makin panjang.</p>
+          <span class="tag">05 — Konsentrasi</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ TIC TAC TOE ============ -->
+    <section class="stage" id="ttt">
+      <svg class="fleuron" viewBox="0 0 46 16"><path d="M2,8 C14,2 18,14 23,8 C28,2 32,14 44,8"/><circle cx="23" cy="8" r="2.4"/></svg>
+      <div class="eyebrow">Bagian 01</div>
+      <h1>Tic-Tac-Toe</h1>
+      <p class="desc">Papan kapur klasik. Pilih lawan komputer atau bermain berdua di perangkat yang sama.</p>
+
+      <div class="seg" id="tttModeSeg" style="width:min(280px,80vw); margin-bottom:16px;" role="group" aria-label="Mode permainan">
+        <button data-val="cpu" class="active">Lawan Komputer</button>
+        <button data-val="pvp">2 Pemain</button>
+      </div>
+
+      <div class="status-line"><span class="pip" id="tttPip"></span><span id="tttStatus">Giliran: X</span></div>
+
+      <div class="board-wrap">
+        <svg class="grid" viewBox="0 0 300 300">
+          <path d="M101,10 C96,80 106,150 99,200 C93,240 103,270 100,292"/>
+          <path d="M201,8 C196,70 204,140 198,200 C194,240 202,262 199,290"/>
+          <path d="M10,101 C80,96 150,106 200,99 C240,93 270,103 292,100"/>
+          <path d="M8,201 C70,196 140,204 200,198 C240,194 262,202 290,199"/>
+        </svg>
+        <div class="cells" id="tttCells"></div>
+      </div>
+
+      <div class="row-controls"><button class="btn primary" id="tttReset">Main Lagi</button></div>
+      <div class="score-row">
+        <div><b id="scoreX">0</b>X</div>
+        <div><b id="scoreO">0</b>O</div>
+        <div><b id="scoreD">0</b>Seri</div>
+      </div>
+    </section>
+
+    <!-- ============ TEBAK ANGKA ============ -->
+    <section class="stage" id="guess">
+      <svg class="fleuron" viewBox="0 0 46 16"><path d="M2,8 C14,2 18,14 23,8 C28,2 32,14 44,8"/><circle cx="23" cy="8" r="2.4"/></svg>
+      <div class="eyebrow">Bagian 02</div>
+      <h1>Tebak Angka</h1>
+      <p class="desc">Aku sedang memikirkan sebuah angka. Gunakan jarum penunjuk sebagai petunjuk seberapa dekat tebakanmu.</p>
+
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 220 130">
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="var(--line)"/>
+              <stop offset="100%" stop-color="var(--accent2)"/>
+            </linearGradient>
+          </defs>
+          <path class="gauge-arc" d="M20,110 A90,90 0 0 1 200,110"/>
+          <path class="gauge-fill" id="gaugeFill" d="M20,110 A90,90 0 0 1 200,110" stroke-dasharray="283" stroke-dashoffset="283"/>
+          <g id="needleGroup" style="transform-origin:110px 110px;">
+            <line class="needle" x1="110" y1="110" x2="110" y2="35"/>
+          </g>
+          <circle class="needle-hub" cx="110" cy="110" r="7"/>
+        </svg>
+      </div>
+      <div class="gauge-readout">
+        <div class="feedback" id="guessFeedback">Masukkan tebakan pertamamu</div>
+        <div class="range" id="guessRange">Rentang: 1–100</div>
+      </div>
+
+      <form class="guess-form" id="guessForm">
+        <input type="number" id="guessInput" class="mono" placeholder="?" aria-label="Tebakan angka" inputmode="numeric">
+        <button class="btn primary" type="submit">Tebak</button>
+      </form>
+      <div class="attempts-left">Sisa percobaan: <b id="attemptsLeft">8</b></div>
+      <div class="chips" id="guessChips"></div>
+      <div class="row-controls"><button class="btn" id="guessReset">Acak Ulang</button></div>
+    </section>
+
+    <!-- ============ MEMORI ============ -->
+    <section class="stage" id="memo">
+      <svg class="fleuron" viewBox="0 0 46 16"><path d="M2,8 C14,2 18,14 23,8 C28,2 32,14 44,8"/><circle cx="23" cy="8" r="2.4"/></svg>
+      <div class="eyebrow">Bagian 03</div>
+      <h1>Memori</h1>
+      <p class="desc">Balik dua kartu setiap giliran. Cocokkan semua pasangan secepat mungkin.</p>
+
+      <div class="status-line"><span class="pip" id="memoPip"></span><span id="memoStatus">Ketuk kartu pertama</span></div>
+
+      <div class="memo-grid" id="memoGrid"></div>
+
+      <div class="memo-stats">
+        <div><b id="memoMoves">0</b>Langkah</div>
+        <div><b id="memoTime">00:00</b>Waktu</div>
+        <div><b id="memoBest">—</b>Terbaik</div>
+      </div>
+      <div class="row-controls"><button class="btn primary" id="memoReset">Kocok Ulang</button></div>
+    </section>
+
+    <!-- ============ BATU GUNTING KERTAS ============ -->
+    <section class="stage" id="rps">
+      <svg class="fleuron" viewBox="0 0 46 16"><path d="M2,8 C14,2 18,14 23,8 C28,2 32,14 44,8"/><circle cx="23" cy="8" r="2.4"/></svg>
+      <div class="eyebrow">Bagian 04</div>
+      <h1>Batu Gunting Kertas</h1>
+      <p class="desc">Komputer mempelajari kebiasaanmu — makin sulit levelnya, makin jeli ia menebak polamu.</p>
+
+      <div class="rps-arena">
+        <div class="rps-slot" id="rpsPlayerSlot"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></div>
+        <span class="rps-vs">lawan</span>
+        <div class="rps-slot" id="rpsCpuSlot"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></div>
+      </div>
+      <div class="rps-result" id="rpsResult">Pilih salah satu di bawah untuk mulai</div>
+
+      <div class="rps-choices">
+        <button class="rps-choice" data-choice="batu" aria-label="Batu">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/></svg>
+        </button>
+        <button class="rps-choice" data-choice="kertas" aria-label="Kertas">
+          <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="1.5"/></svg>
+        </button>
+        <button class="rps-choice" data-choice="gunting" aria-label="Gunting">
+          <svg viewBox="0 0 24 24"><circle cx="7" cy="6" r="2.4"/><circle cx="7" cy="18" r="2.4"/><path d="M9 7l11 11M9 17L20 6"/></svg>
+        </button>
+      </div>
+
+      <div class="score-row">
+        <div><b id="rpsWin">0</b>Menang</div>
+        <div><b id="rpsLose">0</b>Kalah</div>
+        <div><b id="rpsDraw">0</b>Seri</div>
+      </div>
+      <div class="row-controls"><button class="btn" id="rpsReset">Reset Skor</button></div>
+    </section>
+
+    <!-- ============ SIMON / POLA ============ -->
+    <section class="stage" id="simon">
+      <svg class="fleuron" viewBox="0 0 46 16"><path d="M2,8 C14,2 18,14 23,8 C28,2 32,14 44,8"/><circle cx="23" cy="8" r="2.4"/></svg>
+      <div class="eyebrow">Bagian 05</div>
+      <h1>Pola Kuningan</h1>
+      <p class="desc">Perhatikan urutan cahaya, lalu ulangi dengan menekan bidang yang sama. Urutan bertambah tiap ronde.</p>
+
+      <div class="simon-pad-wrap" id="simonPads">
+        <button class="simon-pad" data-idx="0" aria-label="Bidang 1"></button>
+        <button class="simon-pad" data-idx="1" aria-label="Bidang 2"></button>
+        <button class="simon-pad" data-idx="2" aria-label="Bidang 3"></button>
+        <button class="simon-pad" data-idx="3" aria-label="Bidang 4"></button>
+      </div>
+
+      <div class="simon-status" id="simonStatus">Tekan Mulai untuk melihat pola pertama</div>
+      <div class="score-row">
+        <div><b id="simonLevel">0</b>Ronde</div>
+        <div><b id="simonBest">0</b>Terpanjang</div>
+      </div>
+      <div class="row-controls"><button class="btn primary" id="simonStart">Mulai</button></div>
+    </section>
+  </main>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ THEME ENGINE ============ */
+  const THEMES = {
+    parlor:{ dark:{bg:'#141F1A',bg2:'#1B2A23',panel:'#20302A',text:'#EDE6D2',muted:'#9CB3A6',accent:'#C9A34E',accent2:'#B4432D',line:'#3E7C74'},
+              light:{bg:'#F3ECD8',bg2:'#EAE0C4',panel:'#FBF6E8',text:'#26332B',muted:'#5B6B60',accent:'#A97F2E',accent2:'#9A3A26',line:'#2E6259'}},
+    neon:{ dark:{bg:'#0A0A12',bg2:'#12121F',panel:'#171726',text:'#EDEBFF',muted:'#8C89B8',accent:'#FF3EC9',accent2:'#33E1FF',line:'#33E1FF'},
+            light:{bg:'#EDEBFF',bg2:'#DAD6FF',panel:'#F7F5FF',text:'#171726',muted:'#6b678f',accent:'#D6199F',accent2:'#0EA5C4',line:'#0EA5C4'}},
+    ocean:{ dark:{bg:'#08141F',bg2:'#0D1F2E',panel:'#12293B',text:'#E4F1F5',muted:'#7FA5B8',accent:'#3FC7B0',accent2:'#F2795A',line:'#3FC7B0'},
+             light:{bg:'#EAF5F6',bg2:'#D9EDEF',panel:'#FAFEFE',text:'#0D2430',muted:'#4C7A88',accent:'#1E8E7A',accent2:'#D45B3C',line:'#1E8E7A'}},
+    sakura:{ dark:{bg:'#1E1620',bg2:'#291D2C',panel:'#2F2233',text:'#F6E9F2',muted:'#B896B0',accent:'#F28FB2',accent2:'#B58CE0',line:'#F28FB2'},
+              light:{bg:'#FDF2F6',bg2:'#FBE4EE',panel:'#FFFAFC',text:'#3A2A35',muted:'#9C7C93',accent:'#E0679A',accent2:'#8B6BC9',line:'#E0679A'}}
+  };
+  const state = { theme:'parlor', mode:'dark', difficulty:'medium', sound:true };
+
+  function applyTheme(){
+    const t = THEMES[state.theme][state.mode];
+    const root = document.documentElement.style;
+    Object.entries(t).forEach(([k,v])=> root.setProperty('--'+k, v));
+    document.body.setAttribute('data-theme', state.theme);
+    document.body.setAttribute('data-mode', state.mode);
+  }
+  applyTheme();
+
+  /* ============ AUDIO ============ */
+  let actx = null;
+  function beep(freq, dur){
+    if(!state.sound) return;
+    try{
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      const osc = actx.createOscillator();
+      const gain = actx.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(.12, actx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.001, actx.currentTime + dur);
+      osc.connect(gain); gain.connect(actx.destination);
+      osc.start(); osc.stop(actx.currentTime + dur);
+    }catch(e){ /* audio unavailable, silently ignore */ }
+  }
+
+  /* ============ DRAWER / SETTINGS ============ */
+  const drawer = document.getElementById('drawer');
+  const backdrop = document.getElementById('backdrop');
+  function openDrawer(){ drawer.classList.add('open'); backdrop.classList.add('open'); drawer.setAttribute('aria-hidden','false'); }
+  function closeDrawer(){ drawer.classList.remove('open'); backdrop.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
+  document.getElementById('settingsBtn').addEventListener('click', openDrawer);
+  document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+  backdrop.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeDrawer(); });
+
+  document.getElementById('modeToggle').addEventListener('change', e=>{
+    state.mode = e.target.checked ? 'dark' : 'light';
+    applyTheme();
+  });
+  document.getElementById('soundToggle').addEventListener('change', e=>{
+    state.sound = e.target.checked;
+  });
+
+  document.getElementById('themeSwatches').addEventListener('click', e=>{
+    const btn = e.target.closest('.swatch'); if(!btn) return;
+    state.theme = btn.dataset.theme;
+    document.querySelectorAll('.swatch').forEach(s=>s.classList.toggle('active', s===btn));
+    applyTheme();
+  });
+
+  document.getElementById('difficultySeg').addEventListener('click', e=>{
+    const btn = e.target.closest('button'); if(!btn) return;
+    state.difficulty = btn.dataset.val;
+    document.querySelectorAll('#difficultySeg button').forEach(b=>b.classList.toggle('active', b===btn));
+    setupGuessRound();
+    setupMemory();
+  });
+
+  document.getElementById('resetAllScores').addEventListener('click', ()=>{
+    scores.X=0; scores.O=0; scores.D=0;
+    document.getElementById('scoreX').textContent='0';
+    document.getElementById('scoreO').textContent='0';
+    document.getElementById('scoreD').textContent='0';
+    rpsScore.win=0; rpsScore.lose=0; rpsScore.draw=0;
+    document.getElementById('rpsWin').textContent='0';
+    document.getElementById('rpsLose').textContent='0';
+    document.getElementById('rpsDraw').textContent='0';
+    simonBestScore = 0;
+    document.getElementById('simonBest').textContent='0';
+    memoBest = null;
+    document.getElementById('memoBest').textContent='—';
+  });
+
+  /* ============ NAV DOTS ACTIVE STATE ============ */
+  const dotLinks = document.querySelectorAll('.dotnav a');
+  const sections = document.querySelectorAll('.stage');
+  const obs = new IntersectionObserver(entries=>{
+    entries.forEach(en=>{
+      if(en.isIntersecting){
+        dotLinks.forEach(d=> d.classList.toggle('active', d.getAttribute('href')==='#'+en.target.id));
+      }
+    });
+  }, {threshold:.55});
+  sections.forEach(s=>obs.observe(s));
+
+  /* ================= TIC TAC TOE ================= */
+  const tttCellsEl = document.getElementById('tttCells');
+  const tttStatus = document.getElementById('tttStatus');
+  const tttPip = document.getElementById('tttPip');
+  let board, current, gameOver, tttMode = 'cpu';
+  const scores = { X:0, O:0, D:0 };
+  const WIN_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+  function buildCells(){
+    tttCellsEl.innerHTML = '';
+    for(let i=0;i<9;i++){
+      const btn = document.createElement('button');
+      btn.className = 'cell';
+      btn.setAttribute('aria-label','Sel '+(i+1));
+      btn.dataset.i = i;
+      btn.innerHTML = `<svg viewBox="0 0 40 40">
+          <path class="mark x" data-shape="x1" d="M8,8 L32,32"></path>
+          <path class="mark x" data-shape="x2" d="M32,8 L8,32"></path>
+          <path class="mark o" data-shape="o" d="M20,7 a13,13 0 1,1 -0.1,0 z"></path>
+        </svg>`;
+      btn.addEventListener('click', onCellClick);
+      tttCellsEl.appendChild(btn);
+    }
+  }
+  function newGame(){
+    board = Array(9).fill(null); current = 'X'; gameOver = false;
+    buildCells(); updateStatus();
+  }
+  function updateStatus(text){
+    if(text){ tttStatus.textContent = text; return; }
+    tttStatus.textContent = 'Giliran: ' + current;
+    tttPip.style.background = current==='X' ? 'var(--accent2)' : 'var(--line)';
+  }
+  function onCellClick(e){
+    const i = +e.currentTarget.dataset.i;
+    if(gameOver || board[i]) return;
+    place(i, current); beep(current==='X'?420:340,.12);
+    const result = checkResult();
+    if(result){ finishGame(result); return; }
+    current = current === 'X' ? 'O' : 'X';
+    updateStatus();
+    if(tttMode === 'cpu' && current === 'O' && !gameOver){ setTimeout(cpuMove, 380); }
+  }
+  function place(i, mark){
+    board[i] = mark;
+    const cell = tttCellsEl.children[i];
+    const shape = mark === 'X' ? ['x1','x2'] : ['o'];
+    shape.forEach(s=> cell.querySelector('[data-shape="'+s+'"]').classList.add('show'));
+  }
+  function checkResult(){
+    for(const line of WIN_LINES){
+      const [a,b,c] = line;
+      if(board[a] && board[a]===board[b] && board[a]===board[c]) return { winner: board[a], line };
+    }
+    if(board.every(Boolean)) return { winner:null, line:null };
+    return null;
+  }
+  function finishGame(result){
+    gameOver = true;
+    if(result.winner){
+      result.line.forEach(i=> tttCellsEl.children[i].classList.add('win'));
+      scores[result.winner]++;
+      updateStatus(result.winner + ' menang!');
+      beep(600,.25);
+    } else { scores.D++; updateStatus('Seri!'); }
+    document.getElementById('scoreX').textContent = scores.X;
+    document.getElementById('scoreO').textContent = scores.O;
+    document.getElementById('scoreD').textContent = scores.D;
+  }
+  function cpuMove(){
+    if(gameOver) return;
+    let idx;
+    if(state.difficulty === 'easy'){ idx = randomEmpty(); }
+    else if(state.difficulty === 'medium'){ idx = findWinningMove('O') ?? findWinningMove('X') ?? (Math.random()<0.5 ? centerOrCorner() : randomEmpty()); }
+    else { idx = minimaxBestMove(); }
+    if(idx==null) return;
+    place(idx, 'O'); beep(340,.12);
+    const result = checkResult();
+    if(result){ finishGame(result); return; }
+    current = 'X'; updateStatus();
+  }
+  function randomEmpty(){ const e = board.map((v,i)=>v?null:i).filter(v=>v!==null); return e[Math.floor(Math.random()*e.length)]; }
+  function centerOrCorner(){ if(!board[4]) return 4; const c=[0,2,6,8].filter(i=>!board[i]); return c.length? c[Math.floor(Math.random()*c.length)] : randomEmpty(); }
+  function findWinningMove(mark){
+    for(const line of WIN_LINES){
+      const vals = line.map(i=>board[i]);
+      const count = vals.filter(v=>v===mark).length;
+      const empty = line.filter(i=>!board[i]);
+      if(count===2 && empty.length===1) return empty[0];
+    }
+    return null;
+  }
+  function minimaxBestMove(){
+    let best=-Infinity, move=null;
+    for(let i=0;i<9;i++){
+      if(board[i]) continue;
+      board[i]='O'; const score = minimax(board,0,false); board[i]=null;
+      if(score>best){ best=score; move=i; }
+    }
+    return move;
+  }
+  function minimax(bd, depth, isMax){
+    const res = checkResultFor(bd);
+    if(res){ if(res.winner==='O') return 10-depth; if(res.winner==='X') return depth-10; return 0; }
+    if(isMax){
+      let best=-Infinity;
+      for(let i=0;i<9;i++){ if(bd[i]) continue; bd[i]='O'; best=Math.max(best,minimax(bd,depth+1,false)); bd[i]=null; }
+      return best;
+    } else {
+      let best=Infinity;
+      for(let i=0;i<9;i++){ if(bd[i]) continue; bd[i]='X'; best=Math.min(best,minimax(bd,depth+1,true)); bd[i]=null; }
+      return best;
+    }
+  }
+  function checkResultFor(bd){
+    for(const line of WIN_LINES){
+      const [a,b,c]=line;
+      if(bd[a] && bd[a]===bd[b] && bd[a]===bd[c]) return {winner:bd[a]};
+    }
+    if(bd.every(Boolean)) return {winner:null};
+    return null;
+  }
+  document.getElementById('tttReset').addEventListener('click', newGame);
+  document.getElementById('tttModeSeg').addEventListener('click', e=>{
+    const btn = e.target.closest('button'); if(!btn) return;
+    tttMode = btn.dataset.val;
+    document.querySelectorAll('#tttModeSeg button').forEach(b=>b.classList.toggle('active', b===btn));
+    newGame();
+  });
+  newGame();
+
+  /* ================= TEBAK ANGKA ================= */
+  const DIFF_GUESS = { easy:{max:50, attempts:10}, medium:{max:100, attempts:8}, hard:{max:200, attempts:6} };
+  let target, attemptsLeft, maxVal, guessed, roundOver;
+  const guessForm = document.getElementById('guessForm');
+  const guessInput = document.getElementById('guessInput');
+  const guessChips = document.getElementById('guessChips');
+  const guessFeedback = document.getElementById('guessFeedback');
+  const guessRangeEl = document.getElementById('guessRange');
+  const attemptsLeftEl = document.getElementById('attemptsLeft');
+  const gaugeFill = document.getElementById('gaugeFill');
+  const needleGroup = document.getElementById('needleGroup');
+  const ARC_LEN = 283;
+
+  function setupGuessRound(){
+    const cfg = DIFF_GUESS[state.difficulty];
+    maxVal = cfg.max; attemptsLeft = cfg.attempts;
+    target = 1 + Math.floor(Math.random()*maxVal);
+    guessed = []; roundOver = false;
+    guessRangeEl.textContent = 'Rentang: 1–' + maxVal;
+    attemptsLeftEl.innerHTML = 'Sisa percobaan: <b>' + attemptsLeft + '</b>';
+    guessFeedback.textContent = 'Masukkan tebakan pertamamu';
+    guessChips.innerHTML = ''; guessInput.value = '';
+    guessInput.min = 1; guessInput.max = maxVal;
+    guessInput.disabled = false; guessForm.querySelector('button').disabled = false;
+    setGauge(0);
+  }
+  function setGauge(score){
+    const offset = ARC_LEN - (ARC_LEN * score);
+    gaugeFill.style.strokeDashoffset = offset;
+    const angle = -80 + score*160;
+    needleGroup.style.transform = 'rotate(' + angle + 'deg)';
+  }
+  guessForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    if(roundOver) return;
+    const val = parseInt(guessInput.value, 10);
+    if(isNaN(val) || val < 1 || val > maxVal){ guessFeedback.textContent = 'Masukkan angka antara 1–' + maxVal; return; }
+    if(guessed.some(g=>g.val===val)){ guessFeedback.textContent = 'Kamu sudah mencoba angka itu'; return; }
+    attemptsLeft--;
+    const dist = Math.abs(val - target);
+    const score = Math.max(0, 1 - dist / maxVal * 2.2);
+    setGauge(Math.min(1,score));
+    beep(300 + score*500, .15);
+    const dir = val < target ? 'up' : 'down';
+    guessed.push({val, dir});
+    const chip = document.createElement('span');
+    chip.className = 'chip ' + dir; chip.textContent = val;
+    guessChips.appendChild(chip);
+    attemptsLeftEl.innerHTML = 'Sisa percobaan: <b>' + attemptsLeft + '</b>';
+    if(val === target){ guessFeedback.textContent = 'Tepat! Angkanya ' + target + ' 🎉'; endRound(); beep(700,.3); }
+    else if(attemptsLeft <= 0){ guessFeedback.textContent = 'Habis percobaan — angkanya ' + target; endRound(); }
+    else {
+      let hint;
+      if(dist <= Math.max(2, maxVal*0.03)) hint = 'Sangat dekat!';
+      else if(dist <= maxVal*0.12) hint = 'Panas';
+      else if(dist <= maxVal*0.3) hint = 'Hangat';
+      else hint = 'Dingin';
+      guessFeedback.textContent = hint + ' — coba ' + (val < target ? 'lebih besar' : 'lebih kecil');
+    }
+    guessInput.value = ''; guessInput.focus();
+  });
+  function endRound(){ roundOver = true; guessInput.disabled = true; guessForm.querySelector('button').disabled = true; }
+  document.getElementById('guessReset').addEventListener('click', setupGuessRound);
+  setupGuessRound();
+
+  /* ================= MEMORI ================= */
+  const MEMO_ICONS = [
+    '<circle cx="12" cy="12" r="7"/>',
+    '<rect x="5" y="5" width="14" height="14" rx="2"/>',
+    '<path d="M12 4l7 15H5z"/>',
+    '<path d="M12 3l2.6 6.6L21 12l-6.4 2.4L12 21l-2.6-6.6L3 12l6.4-2.4z"/>',
+    '<path d="M12 21s-7-4.5-9.3-9C1.4 8.6 3 5 6.5 5c2 0 3.3 1.3 3.9 2.2C11 6.3 12.3 5 14.3 5 17.8 5 19.4 8.6 21.3 12 19 16.5 12 21 12 21z"/>',
+    '<path d="M12 3v18M3 12h18" transform="rotate(45 12 12)"/>',
+    '<path d="M4 17l4-10 4 10M6 13h4M14 17c0-1 .8-1.8 1.8-2.3.9-.5 1.7-1 1.7-2 0-1-.8-1.7-1.8-1.7-1 0-1.6.6-1.9 1.2"/>',
+    '<path d="M17 3a5 5 0 0 1 0 10 5 5 0 0 1 0-10zM7 11a5 5 0 0 1 0 10 5 5 0 0 1 0-10z"/>'
+  ];
+  const DIFF_MEMO = { easy:{pairs:3, cols:3}, medium:{pairs:6, cols:4}, hard:{pairs:8, cols:4} };
+  const memoGrid = document.getElementById('memoGrid');
+  const memoStatus = document.getElementById('memoStatus');
+  const memoPip = document.getElementById('memoPip');
+  let memoCards, memoFlipped, memoLock, memoMoves, memoMatches, memoTimer, memoSeconds, memoBest = null;
+
+  function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+
+  function setupMemory(){
+    clearInterval(memoTimer);
+    const cfg = DIFF_MEMO[state.difficulty];
+    const icons = shuffle(MEMO_ICONS.slice()).slice(0, cfg.pairs);
+    memoCards = shuffle(icons.concat(icons).map((svg,i)=>({id:i, svg, matched:false})));
+    memoFlipped = []; memoLock = false; memoMoves = 0; memoMatches = 0; memoSeconds = 0;
+    memoGrid.style.gridTemplateColumns = 'repeat(' + cfg.cols + ',1fr)';
+    memoGrid.innerHTML = '';
+    memoCards.forEach((c,i)=>{
+      const btn = document.createElement('button');
+      btn.className = 'memo-card'; btn.dataset.i = i;
+      btn.innerHTML = `<div class="memo-inner">
+          <div class="memo-face back"></div>
+          <div class="memo-face front"><svg viewBox="0 0 24 24">${c.svg}</svg></div>
+        </div>`;
+      btn.addEventListener('click', ()=>onMemoClick(i));
+      memoGrid.appendChild(btn);
+    });
+    document.getElementById('memoMoves').textContent = '0';
+    document.getElementById('memoTime').textContent = '00:00';
+    memoStatus.textContent = 'Ketuk kartu pertama';
+    memoPip.style.background = 'var(--accent)';
+  }
+  function memoTimeStr(){
+    const m = String(Math.floor(memoSeconds/60)).padStart(2,'0');
+    const s = String(memoSeconds%60).padStart(2,'0');
+    return m+':'+s;
+  }
+  function startMemoTimer(){
+    memoTimer = setInterval(()=>{ memoSeconds++; document.getElementById('memoTime').textContent = memoTimeStr(); }, 1000);
+  }
+  function onMemoClick(i){
+    if(memoLock) return;
+    const card = memoCards[i];
+    if(card.matched) return;
+    const el = memoGrid.children[i];
+    if(el.classList.contains('flipped')) return;
+    if(memoFlipped.length===0 && memoSeconds===0 && !memoTimer) startMemoTimer();
+    el.classList.add('flipped'); beep(500,.1);
+    memoFlipped.push(i);
+    if(memoFlipped.length===2){
+      memoMoves++; document.getElementById('memoMoves').textContent = memoMoves;
+      memoLock = true;
+      const [a,b] = memoFlipped;
+      if(memoCards[a].svg === memoCards[b].svg){
+        memoCards[a].matched = true; memoCards[b].matched = true;
+        memoGrid.children[a].classList.add('matched');
+        memoGrid.children[b].classList.add('matched');
+        memoFlipped = []; memoLock = false; memoMatches++;
+        beep(650,.15);
+        memoStatus.textContent = 'Cocok! Lanjutkan.';
+        if(memoMatches === memoCards.length/2){
+          clearInterval(memoTimer);
+          memoStatus.textContent = 'Selesai dalam ' + memoMoves + ' langkah, ' + memoTimeStr();
+          if(memoBest===null || memoMoves < memoBest){ memoBest = memoMoves; document.getElementById('memoBest').textContent = memoBest; }
+          beep(800,.3);
+        }
+      } else {
+        memoStatus.textContent = 'Tidak cocok, coba lagi';
+        setTimeout(()=>{
+          memoGrid.children[a].classList.remove('flipped');
+          memoGrid.children[b].classList.remove('flipped');
+          memoFlipped = []; memoLock = false;
+        }, 800);
+      }
+    }
+  }
+  document.getElementById('memoReset').addEventListener('click', setupMemory);
+  setupMemory();
+
+  /* ================= BATU GUNTING KERTAS ================= */
+  const RPS_ICONS = {
+    batu:'<circle cx="12" cy="13" r="7"/>',
+    kertas:'<rect x="5" y="4" width="14" height="16" rx="1.5"/>',
+    gunting:'<circle cx="7" cy="6" r="2.4"/><circle cx="7" cy="18" r="2.4"/><path d="M9 7l11 11M9 17L20 6"/>'
+  };
+  const BEATS = { batu:'gunting', gunting:'kertas', kertas:'batu' };
+  const rpsScore = { win:0, lose:0, draw:0 };
+  let rpsHistory = [];
+  const rpsPlayerSlot = document.getElementById('rpsPlayerSlot');
+  const rpsCpuSlot = document.getElementById('rpsCpuSlot');
+  const rpsResult = document.getElementById('rpsResult');
+
+  function rpsCpuChoice(){
+    const choices = ['batu','kertas','gunting'];
+    if(state.difficulty === 'easy' || rpsHistory.length < 2){
+      return choices[Math.floor(Math.random()*3)];
+    }
+    const freq = { batu:0, kertas:0, gunting:0 };
+    rpsHistory.forEach(c=> freq[c]++);
+    const favorite = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+    const counter = Object.keys(BEATS).find(k=> BEATS[k]===favorite);
+    if(state.difficulty === 'hard') return counter;
+    return Math.random() < 0.6 ? counter : choices[Math.floor(Math.random()*3)];
+  }
+
+  document.querySelectorAll('.rps-choice').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const player = btn.dataset.choice;
+      rpsHistory.push(player);
+      const cpu = rpsCpuChoice();
+      rpsPlayerSlot.innerHTML = '<svg viewBox="0 0 24 24">'+RPS_ICONS[player]+'</svg>';
+      rpsCpuSlot.innerHTML = '<svg viewBox="0 0 24 24">'+RPS_ICONS[cpu]+'</svg>';
+      beep(400,.1);
+      let msg;
+      if(player === cpu){ rpsScore.draw++; msg = 'Seri — kalian berdua memilih ' + player; }
+      else if(BEATS[player] === cpu){ rpsScore.win++; msg = player[0].toUpperCase()+player.slice(1) + ' mengalahkan ' + cpu + '. Kamu menang!'; beep(700,.25); }
+      else { rpsScore.lose++; msg = cpu[0].toUpperCase()+cpu.slice(1) + ' mengalahkan ' + player + '. Komputer menang.'; beep(220,.25); }
+      rpsResult.textContent = msg;
+      document.getElementById('rpsWin').textContent = rpsScore.win;
+      document.getElementById('rpsLose').textContent = rpsScore.lose;
+      document.getElementById('rpsDraw').textContent = rpsScore.draw;
+    });
+  });
+  document.getElementById('rpsReset').addEventListener('click', ()=>{
+    rpsScore.win=0; rpsScore.lose=0; rpsScore.draw=0; rpsHistory=[];
+    document.getElementById('rpsWin').textContent='0';
+    document.getElementById('rpsLose').textContent='0';
+    document.getElementById('rpsDraw').textContent='0';
+    rpsResult.textContent = 'Skor direset — pilih untuk mulai lagi';
+    rpsPlayerSlot.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>';
+    rpsCpuSlot.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>';
+  });
+
+  /* ================= SIMON / POLA KUNINGAN ================= */
+  const DIFF_SIMON = { easy:{start:1, speed:750}, medium:{start:2, speed:550}, hard:{start:3, speed:380} };
+  const SIMON_FREQ = [261.6, 329.6, 392.0, 523.3];
+  const simonPads = Array.from(document.querySelectorAll('.simon-pad'));
+  const simonStatus = document.getElementById('simonStatus');
+  let simonSeq, simonPlayerPos, simonAccepting, simonBestScore = 0;
+
+  function litPad(idx, dur){
+    const pad = simonPads[idx];
+    pad.classList.add('lit'); beep(SIMON_FREQ[idx], dur/1000*0.8);
+    setTimeout(()=> pad.classList.remove('lit'), dur*0.7);
+  }
+  function playSequence(){
+    simonAccepting = false;
+    const cfg = DIFF_SIMON[state.difficulty];
+    simonStatus.innerHTML = 'Perhatikan polanya...';
+    simonSeq.forEach((idx, i)=>{
+      setTimeout(()=> litPad(idx, cfg.speed), i*cfg.speed);
+    });
+    setTimeout(()=>{
+      simonAccepting = true; simonPlayerPos = 0;
+      simonStatus.innerHTML = 'Giliranmu — ulangi polanya';
+    }, simonSeq.length*cfg.speed + 200);
+  }
+  function simonNewRound(){
+    const cfg = DIFF_SIMON[state.difficulty];
+    if(!simonSeq){ simonSeq = []; for(let i=0;i<cfg.start;i++) simonSeq.push(Math.floor(Math.random()*4)); }
+    else { simonSeq.push(Math.floor(Math.random()*4)); }
+    document.getElementById('simonLevel').textContent = simonSeq.length;
+    playSequence();
+  }
+  function simonGameOver(){
+    simonAccepting = false;
+    simonStatus.innerHTML = 'Terhenti di ronde <b>' + simonSeq.length + '</b>. Tekan Mulai untuk mencoba lagi.';
+    if(simonSeq.length > simonBestScore){ simonBestScore = simonSeq.length; document.getElementById('simonBest').textContent = simonBestScore; }
+    simonSeq = null;
+    beep(180,.35);
+  }
+  simonPads.forEach(pad=>{
+    pad.addEventListener('click', ()=>{
+      if(!simonAccepting || !simonSeq) return;
+      const idx = +pad.dataset.idx;
+      litPad(idx, 250);
+      if(idx === simonSeq[simonPlayerPos]){
+        simonPlayerPos++;
+        if(simonPlayerPos === simonSeq.length){
+          simonAccepting = false;
+          simonStatus.innerHTML = 'Tepat! Menyiapkan ronde berikutnya...';
+          setTimeout(simonNewRound, 700);
+        }
+      } else {
+        simonGameOver();
+      }
+    });
+  });
+  document.getElementById('simonStart').addEventListener('click', ()=>{
+    simonSeq = null; simonNewRound();
+  });
+
+})();
+</script>
+</body>
+</html>
